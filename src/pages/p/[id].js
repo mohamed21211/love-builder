@@ -353,7 +353,7 @@ function TiltImage({ src }) {
             <motion.img
                 src={src}
                 alt="page"
-                className="h-full w-full object-cover"
+                className="w-full h-auto"
                 whileHover={{ scale: 1.04 }}
                 transition={{ duration: 0.4 }}
             />

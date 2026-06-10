@@ -761,15 +761,18 @@ export default function Home() {
                                                 <img
                                                     src={imageUrl}
                                                     alt="preview"
-                                                    className="h-full w-full object-cover"
-                                                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                                                    className="w-full h-auto"                                                    onError={(e) => { e.currentTarget.style.display = "none"; }}
                                                 />
                                             </motion.div>
                                         ) : (
-                                            <div className="mx-auto mb-4 flex aspect-[4/3] w-full max-w-md items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-white/50 text-sm text-slate-400">
-                                                أضف صورة للمعاينة
+                                            <div className="mx-auto mb-6 w-full max-w-xl overflow-hidden rounded-[1.75rem] shadow-2xl">                                                أضف صورة للمعاينة
                                             </div>
                                         )}
+                                        <img
+                                            src={imageUrl}
+                                            alt="page"
+                                            className="w-full h-auto"
+                                        />
 
                                         <h2 className={`text-2xl font-black tracking-tight md:text-3xl ${isDark ? "text-white" : "text-slate-900"}`}>
                                             {name || "اكتب الاسم"}
