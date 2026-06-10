@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import axios from "axios";
 import { motion } from "framer-motion";
 import {
     Heart,
@@ -84,6 +85,7 @@ export default function Home() {
     const [copied, setCopied] = useState(false);
     const [link, setLink] = useState("");
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     const selected = templateById(theme);
 
@@ -92,6 +94,29 @@ export default function Home() {
     }, [link]);
 
     const displayButtonText = buttonText.trim() || selected.button;
+
+    async function uploadImage(file) {
+        try {
+            setUploading(true);
+
+            const formData = new FormData();
+
+            formData.append("file", file);
+            formData.append("upload_preset", "lovebuilder");
+
+            const res = await axios.post(
+                "https://api.cloudinary.com/v1_1/dznlcps4o/image/upload",
+                formData
+            );
+
+            setImageUrl(res.data.secure_url);
+        } catch (err) {
+            console.error(err);
+            alert("فشل رفع الصورة");
+        }
+
+        setUploading(false);
+    }
 
     async function handleGenerate() {
         if (!name.trim() || !message.trim()) {
@@ -318,16 +343,32 @@ export default function Home() {
                                 رابط الصورة
                             </label>
 
+                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                <ImagePlus className="h-4 w-4" />
+                                الصورة
+                            </label>
+
                             <input
-                                value={imageUrl}
-                                onChange={(e) => setImageUrl(e.target.value)}
-                                placeholder="حط رابط صورة مباشر"
-                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-slate-900"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) uploadImage(file);
+                                }}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3"
                             />
 
-                            <p className="mt-2 text-xs leading-6 text-slate-500">
-                                استخدم رابط صورة مباشر، والصورة هتظهر داخل الصفحة النهائية.
-                            </p>
+                            {uploading && (
+                                <p className="mt-3 text-sm text-blue-600">
+                                    جاري رفع الصورة...
+                                </p>
+                            )}
+
+                            {imageUrl && (
+                                <p className="mt-3 text-green-600 text-sm">
+                                    ✅ تم رفع الصورة بنجاح
+                                </p>
+                            )}
                         </motion.div>
                     </section>
 
