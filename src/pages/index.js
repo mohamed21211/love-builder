@@ -14,6 +14,7 @@ import {
     Copy,
     Check,
     ChevronRight,
+    QrCode,
 } from "lucide-react";
 import { db } from "../lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
@@ -418,6 +419,7 @@ export default function Home() {
     const [link, setLink] = useState("");
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [shareTab, setShareTab] = useState("link");
 
     const currentStyles = subStyles[themeGroup] ?? subStyles.romantic;
     const selected = getSubStyle(themeGroup, styleId);
@@ -504,30 +506,18 @@ export default function Home() {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="mb-8 overflow-hidden rounded-[2rem] border border-white/50 bg-white/70 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.1)] backdrop-blur-2xl md:flex md:items-center md:justify-between md:gap-6"
+                    className="mb-8 overflow-hidden rounded-[2rem] border border-white/50 bg-white/70 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.1)] backdrop-blur-2xl"
                 >
-                    <div className="max-w-3xl">
-                        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-sm font-medium text-white shadow-sm">
-                            <Sparkles className="h-4 w-4" />
-                            موقع إنشاء صفحات شخصية جاهزة
-                        </div>
-                        <h1 className="text-3xl font-black tracking-tight text-slate-900 md:text-5xl">
-                            اصنع صفحة جميلة بلينك واحد، وتكون جاهزة للمشاركة فورًا
-                        </h1>
-                        <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
-                            اختار الشكل والستايل، اكتب الرسالة، وخد صفحة أنيقة بتصميم متحرك ومريح للعين.
-                        </p>
+                    <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-sm font-medium text-white shadow-sm">
+                        <Sparkles className="h-4 w-4" />
+                        موقع إنشاء صفحات شخصية جاهزة
                     </div>
-                    <motion.button
-                        whileHover={{ scale: 1.04, boxShadow: "0 8px 32px rgba(15,23,42,0.25)" }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={handleGenerate}
-                        disabled={loading}
-                        className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition disabled:cursor-not-allowed disabled:opacity-70 md:mt-0"
-                    >
-                        <Wand2 className="h-4 w-4" />
-                        {loading ? "جاري الإنشاء..." : "Generate"}
-                    </motion.button>
+                    <h1 className="text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
+                        اصنع صفحة جميلة بلينك واحد، وتكون جاهزة للمشاركة فورًا
+                    </h1>
+                    <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
+                        اختار الشكل والستايل، اكتب الرسالة، وخد صفحة أنيقة بتصميم متحرك ومريح للعين.
+                    </p>
                 </motion.header>
 
                 <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
@@ -582,7 +572,7 @@ export default function Home() {
                                 transition={{ duration: 0.45 }}
                                 className={`rounded-[2rem] border p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-2xl ${activeGroup.panel}`}
                             >
-                                <div className="mb-4 flex items-center gap-2 text-base font-bold text-slate-900">
+                                <div className={`mb-4 flex items-center gap-2 text-base font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
                                     <ChevronRight className="h-4 w-4" />
                                     اختر الستايل
                                 </div>
@@ -621,54 +611,34 @@ export default function Home() {
                             </motion.div>
                         </AnimatePresence>
 
-                        {/* Name & button text */}
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <motion.div
-                                initial={{ opacity: 0, y: 18 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.55, delay: 0.1 }}
-                                className="rounded-[2rem] border border-white/50 bg-white/80 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl"
-                            >
-                                <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                    <UserRound className="h-4 w-4" />
-                                    الاسم
-                                </label>
-                                <input
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="اكتب الاسم"
-                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                                />
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ opacity: 0, y: 18 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.55, delay: 0.15 }}
-                                className="rounded-[2rem] border border-white/50 bg-white/80 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl"
-                            >
-                                <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                    <MessageCircle className="h-4 w-4" />
-                                    نص الزر
-                                </label>
-                                <input
-                                    value={buttonText}
-                                    onChange={(e) => setButtonText(e.target.value)}
-                                    placeholder="افتح الرسالة"
-                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                                />
-                            </motion.div>
-                        </div>
+                        {/* Name */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 18 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.55, delay: 0.1 }}
+                            className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_4px_24px_rgba(15,23,42,0.07)]"
+                        >
+                            <label className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+                                <UserRound className="h-4 w-4 text-slate-500" />
+                                الاسم
+                            </label>
+                            <input
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="اكتب الاسم"
+                                className="w-full rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-0"
+                            />
+                        </motion.div>
 
                         {/* Message */}
                         <motion.div
                             initial={{ opacity: 0, y: 18 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.55, delay: 0.2 }}
-                            className="rounded-[2rem] border border-white/50 bg-white/80 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl"
+                            className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_4px_24px_rgba(15,23,42,0.07)]"
                         >
-                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                <MessageCircle className="h-4 w-4" />
+                            <label className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+                                <MessageCircle className="h-4 w-4 text-slate-500" />
                                 الرسالة
                             </label>
                             <textarea
@@ -676,7 +646,7 @@ export default function Home() {
                                 onChange={(e) => setMessage(e.target.value)}
                                 placeholder="اكتب الرسالة هنا"
                                 rows={6}
-                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                                className="w-full rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-0 resize-none"
                             />
                         </motion.div>
 
@@ -685,21 +655,25 @@ export default function Home() {
                             initial={{ opacity: 0, y: 18 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.55, delay: 0.25 }}
-                            className="rounded-[2rem] border border-white/50 bg-white/80 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl"
+                            className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_4px_24px_rgba(15,23,42,0.07)]"
                         >
-                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                <ImagePlus className="h-4 w-4" />
+                            <label className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+                                <ImagePlus className="h-4 w-4 text-slate-500" />
                                 الصورة
                             </label>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) uploadImage(file);
-                                }}
-                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
-                            />
+                            <label className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500 transition hover:border-slate-400 hover:bg-slate-100">
+                                <ImagePlus className="h-6 w-6 text-slate-400" />
+                                <span>اضغط لاختيار صورة</span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) uploadImage(file);
+                                    }}
+                                />
+                            </label>
                             {uploading && <p className="mt-3 text-sm text-blue-600">جاري رفع الصورة...</p>}
                             {imageUrl && !uploading && (
                                 <motion.p
@@ -711,6 +685,24 @@ export default function Home() {
                                 </motion.p>
                             )}
                         </motion.div>
+                        {/* Generate CTA */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 18 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.55, delay: 0.3 }}
+                        >
+                            <motion.button
+                                whileHover={{ scale: 1.02, boxShadow: "0 12px 40px rgba(15,23,42,0.3)" }}
+                                whileTap={{ scale: 0.97 }}
+                                onClick={handleGenerate}
+                                disabled={loading}
+                                className="inline-flex w-full items-center justify-center gap-3 rounded-[2rem] bg-slate-900 px-6 py-5 text-base font-bold text-white shadow-xl transition disabled:cursor-not-allowed disabled:opacity-70"
+                            >
+                                <Wand2 className="h-5 w-5" />
+                                {loading ? "جاري إنشاء الصفحة..." : "أنشئ الصفحة واحصل على اللينك"}
+                            </motion.button>
+                        </motion.div>
+
                     </section>
 
                     {/* Right column: Preview + link */}
@@ -728,7 +720,7 @@ export default function Home() {
                                         <Heart className="h-3.5 w-3.5 text-rose-500" />
                                         المعاينة المباشرة
                                     </div>
-                                    <div className="text-xs font-medium text-slate-500">{selected.label}</div>
+                                    <div className={`text-xs font-medium ${isDark ? "text-white/60" : "text-slate-500"}`}>{selected.label}</div>
                                 </div>
 
                                 <AnimatePresence mode="wait">
@@ -750,7 +742,7 @@ export default function Home() {
                                             </motion.div>
                                         </div>
 
-                                        <div className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Preview</div>
+                                        <div className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">معاينة</div>
 
                                         {imageUrl ? (
                                             <motion.div
@@ -765,22 +757,23 @@ export default function Home() {
                                                 />
                                             </motion.div>
                                         ) : (
-                                            <div className="mx-auto mb-6 w-full max-w-xl overflow-hidden rounded-[1.75rem] shadow-2xl">                                                أضف صورة للمعاينة
+                                            <div className={`mx-auto mb-6 w-full max-w-xl overflow-hidden rounded-[1.75rem] shadow-2xl flex items-center justify-center py-8 border border-dashed ${isDark ? "border-white/20 text-white/40" : "border-slate-200 text-slate-400"}`}>
+                                                <span className="text-sm">أضف صورة للمعاينة</span>
                                             </div>
                                         )}
-                                        <img
-                                            src={imageUrl}
-                                            alt="page"
-                                            className="w-full h-auto"
-                                        />
 
                                         <h2 className={`text-2xl font-black tracking-tight md:text-3xl ${isDark ? "text-white" : "text-slate-900"}`}>
                                             {name || "اكتب الاسم"}
                                         </h2>
 
                                         <p className={`mx-auto mt-3 max-w-md text-sm leading-7 ${isDark ? "text-white/70" : "text-slate-600"}`}>
-                                            {message || "اكتب الرسالة وستظهر هنا بشكل جميل قبل إنشاء الرابط."}
+                                            {message || "اكتب الرسالة هنا وستظهر تلقائيًا في المعاينة."}
                                         </p>
+
+                                        {/* Theme description */}
+                                        <div className={`mx-auto mt-4 max-w-sm rounded-2xl px-4 py-3 text-xs leading-6 ${isDark ? "bg-white/10 text-white/60" : "bg-slate-50 text-slate-500 border border-slate-100"}`}>
+                                            <span className="font-semibold">{selected.title}</span> — {selected.subtitle}
+                                        </div>
 
                                         <motion.button
                                             whileHover={{ scale: 1.04, boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}
@@ -794,14 +787,14 @@ export default function Home() {
                                 </AnimatePresence>
 
                                 {/* Opening effect badge */}
-                                <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-white/60 px-3 py-2 text-xs font-medium text-slate-600 backdrop-blur-sm">
+                                <div className={`mt-3 flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-medium backdrop-blur-sm ${isDark ? "bg-white/10 text-white/80" : "bg-white/60 text-slate-600"}`}>
                                     <span>طريقة الفتح:</span>
                                     <span className="font-bold">{openEffectLabels[selected.openEffect]}</span>
                                 </div>
                             </div>
                         </motion.div>
 
-                        {/* Link card */}
+                        {/* Share card */}
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -810,35 +803,132 @@ export default function Home() {
                         >
                             <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
                                 <LinkIcon className="h-5 w-5" />
-                                اللينك النهائي
+                                شارك الصفحة
                             </div>
 
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium break-all text-slate-700">
-                                {shareLink}
-                            </div>
-
-                            <div className="mt-4 flex gap-3">
-                                <motion.button
-                                    whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(15,23,42,0.25)" }}
-                                    whileTap={{ scale: 0.97 }}
-                                    onClick={handleGenerate}
-                                    disabled={loading}
-                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-70"
+                            {/* Tabs */}
+                            <div className="mb-4 flex gap-1 rounded-2xl bg-slate-100 p-1">
+                                <button
+                                    onClick={() => setShareTab("link")}
+                                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-semibold transition ${shareTab === "link" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
                                 >
-                                    <Sparkles className="h-4 w-4" />
-                                    {loading ? "جاري الإنشاء..." : "Generate Link"}
-                                </motion.button>
-
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.97 }}
-                                    onClick={copyLink}
-                                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                                    <LinkIcon className="h-3.5 w-3.5" />
+                                    لينك
+                                </button>
+                                <button
+                                    onClick={() => setShareTab("qr")}
+                                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-semibold transition ${shareTab === "qr" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
                                 >
-                                    {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-                                    {copied ? "Copied" : "Copy"}
-                                </motion.button>
+                                    <QrCode className="h-3.5 w-3.5" />
+                                    QR كود
+                                </button>
                             </div>
+
+                            <AnimatePresence mode="wait">
+                                {shareTab === "link" ? (
+                                    <motion.div key="linktab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium break-all text-slate-700">
+                                            {shareLink}
+                                        </div>
+
+                                        <div className="mt-4 flex gap-3">
+                                            <motion.button
+                                                whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(15,23,42,0.25)" }}
+                                                whileTap={{ scale: 0.97 }}
+                                                onClick={handleGenerate}
+                                                disabled={loading}
+                                                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-70"
+                                            >
+                                                <Sparkles className="h-4 w-4" />
+                                                {loading ? "جاري الإنشاء..." : "أنشئ اللينك"}
+                                            </motion.button>
+
+                                            <motion.button
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.97 }}
+                                                onClick={copyLink}
+                                                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                                            >
+                                                {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                                                {copied ? "Copied" : "Copy"}
+                                            </motion.button>
+                                        </div>
+
+                                        {link && (
+                                            <motion.button
+                                                initial={{ opacity: 0, y: 8 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.97 }}
+                                                onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, "_blank")}
+                                                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-600"
+                                            >
+                                                <span>📲</span>
+                                                شارك على واتساب
+                                            </motion.button>
+                                        )}
+                                    </motion.div>
+                                ) : (
+                                    <motion.div key="qrtab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-4">
+                                        {link ? (
+                                            <>
+                                                {/* Heart-shaped QR */}
+                                                <div className="relative flex items-center justify-center" style={{ width: 220, height: 210 }}>
+                                                    <svg className="absolute inset-0 h-full w-full" viewBox="0 0 220 210" fill="none">
+                                                        <defs>
+                                                            <linearGradient id="hGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                                <stop offset="0%" stopColor="#fb7185" />
+                                                                <stop offset="100%" stopColor="#ec4899" />
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <path
+                                                            d="M 110,178 C 80,158 12,122 12,68 C 12,33 43,13 110,48 C 177,13 208,33 208,68 C 208,122 140,158 110,178 Z"
+                                                            fill="url(#hGrad)"
+                                                        />
+                                                    </svg>
+                                                    <div
+                                                        className="relative z-10 overflow-hidden rounded-2xl border-4 border-white shadow-xl"
+                                                        style={{ width: 138, height: 138, marginTop: 8 }}
+                                                    >
+                                                        <img
+                                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=276x276&data=${encodeURIComponent(link)}&bgcolor=ffffff&color=1a1a2e&margin=8`}
+                                                            alt="QR Code"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <p className="text-sm font-medium text-slate-600">📸 امسح الكود بالكاميرا لفتح الصفحة</p>
+
+                                                <motion.button
+                                                    whileHover={{ scale: 1.02 }}
+                                                    whileTap={{ scale: 0.97 }}
+                                                    onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, "_blank")}
+                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-600"
+                                                >
+                                                    <span>📲</span>
+                                                    شارك على واتساب
+                                                </motion.button>
+                                            </>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-3 py-6 text-center">
+                                                <span className="text-4xl">🫀</span>
+                                                <p className="text-sm text-slate-500">أنشئ الصفحة الأول عشان يظهر QR ❤️</p>
+                                                <motion.button
+                                                    whileHover={{ scale: 1.02 }}
+                                                    whileTap={{ scale: 0.97 }}
+                                                    onClick={handleGenerate}
+                                                    disabled={loading}
+                                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition disabled:opacity-70"
+                                                >
+                                                    <Sparkles className="h-4 w-4" />
+                                                    {loading ? "جاري الإنشاء..." : "أنشئ اللينك"}
+                                                </motion.button>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-xs leading-6 text-amber-900">
                                 الصفحات بتتحفظ في Firebase، والصورة بتظهر من رابط Cloudinary.
