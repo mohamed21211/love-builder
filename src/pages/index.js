@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -406,6 +406,20 @@ const openEffectLabels = {
 function getSubStyle(themeId, styleId) {
     const list = subStyles[themeId] ?? subStyles.romantic;
     return list.find((s) => s.id === styleId) ?? list[0];
+}
+
+// ─── QR display ──────────────────────────────────────────────────────────────
+
+function HeartQR({ link }) {
+    return (
+        <div className="overflow-hidden rounded-2xl border-4 border-white shadow-xl" style={{ width: 160, height: 160 }}>
+            <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(link)}&bgcolor=ffffff&color=1a1a2e&margin=8`}
+                alt="QR Code"
+                className="w-full h-full object-cover"
+            />
+        </div>
+    );
 }
 
 export default function Home() {
@@ -872,31 +886,8 @@ export default function Home() {
                                     <motion.div key="qrtab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-4">
                                         {link ? (
                                             <>
-                                                {/* Heart-shaped QR */}
-                                                <div className="relative flex items-center justify-center" style={{ width: 220, height: 210 }}>
-                                                    <svg className="absolute inset-0 h-full w-full" viewBox="0 0 220 210" fill="none">
-                                                        <defs>
-                                                            <linearGradient id="hGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                                <stop offset="0%" stopColor="#fb7185" />
-                                                                <stop offset="100%" stopColor="#ec4899" />
-                                                            </linearGradient>
-                                                        </defs>
-                                                        <path
-                                                            d="M 110,178 C 80,158 12,122 12,68 C 12,33 43,13 110,48 C 177,13 208,33 208,68 C 208,122 140,158 110,178 Z"
-                                                            fill="url(#hGrad)"
-                                                        />
-                                                    </svg>
-                                                    <div
-                                                        className="relative z-10 overflow-hidden rounded-2xl border-4 border-white shadow-xl"
-                                                        style={{ width: 138, height: 138, marginTop: 8 }}
-                                                    >
-                                                        <img
-                                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=276x276&data=${encodeURIComponent(link)}&bgcolor=ffffff&color=1a1a2e&margin=8`}
-                                                            alt="QR Code"
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    </div>
-                                                </div>
+                                                {/* Heart-shaped QR using canvas clip */}
+                                                <HeartQR link={link} />
 
                                                 <p className="text-sm font-medium text-slate-600">📸 امسح الكود بالكاميرا لفتح الصفحة</p>
 
