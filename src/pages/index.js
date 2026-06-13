@@ -408,6 +408,36 @@ function getSubStyle(themeId, styleId) {
     return list.find((s) => s.id === styleId) ?? list[0];
 }
 
+// ─── Mini typewriter for preview ─────────────────────────────────────────────
+
+function MiniTypewriter({ text, isDark }) {
+    const [displayed, setDisplayed] = useState("");
+    useEffect(() => {
+        setDisplayed("");
+        if (!text) return;
+        let i = 0;
+        const id = setInterval(() => {
+            i++;
+            setDisplayed(text.slice(0, i));
+            if (i >= text.length) clearInterval(id);
+        }, 45);
+        return () => clearInterval(id);
+    }, [text]);
+
+    return (
+        <p className={`mt-2 text-center text-[11px] leading-5 ${isDark ? "text-white/70" : "text-slate-600"}`} style={{ direction: "rtl" }}>
+            {displayed}
+            {displayed.length < text.length && (
+                <motion.span
+                    animate={{ opacity: [1, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity }}
+                    className="inline-block ml-0.5 w-0.5 h-3 bg-current align-middle"
+                />
+            )}
+        </p>
+    );
+}
+
 // ─── QR display ──────────────────────────────────────────────────────────────
 
 function HeartQR({ link }) {
@@ -434,6 +464,9 @@ export default function Home() {
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [shareTab, setShareTab] = useState("link");
+    const [previewTab, setPreviewTab] = useState("cover");
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [loadingMsg, setLoadingMsg] = useState("");
 
     const currentStyles = subStyles[themeGroup] ?? subStyles.romantic;
     const selected = getSubStyle(themeGroup, styleId);
@@ -465,6 +498,20 @@ export default function Home() {
             return;
         }
         setLoading(true);
+        setShowSuccess(false);
+
+        const msgs = [
+            "✨ جاري إنشاء صفحتك...",
+            "❤️ بنحضر المفاجأة...",
+            "🎁 تقريبًا جاهز...",
+        ];
+        let idx = 0;
+        setLoadingMsg(msgs[0]);
+        const msgInterval = setInterval(() => {
+            idx = (idx + 1) % msgs.length;
+            setLoadingMsg(msgs[idx]);
+        }, 900);
+
         try {
             const docRef = await addDoc(collection(db, "pages"), {
                 name: name.trim(),
@@ -475,8 +522,11 @@ export default function Home() {
                 openEffect: selected.openEffect,
                 createdAt: new Date(),
             });
+            clearInterval(msgInterval);
             setLink(`${window.location.origin}/p/${docRef.id}`);
+            setShowSuccess(true);
         } catch (error) {
+            clearInterval(msgInterval);
             console.error(error);
             alert("حصل خطأ أثناء إنشاء الصفحة");
         }
@@ -688,15 +738,32 @@ export default function Home() {
                                     }}
                                 />
                             </label>
-                            {uploading && <p className="mt-3 text-sm text-blue-600">جاري رفع الصورة...</p>}
+                            {uploading && (
+                                <div className="mt-3 flex items-center gap-2 text-sm text-blue-600">
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                        className="h-4 w-4 rounded-full border-2 border-blue-200 border-t-blue-600"
+                                    />
+                                    جاري رفع الصورة...
+                                </div>
+                            )}
                             {imageUrl && !uploading && (
-                                <motion.p
-                                    initial={{ opacity: 0, scale: 0.9 }}
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.92 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="mt-3 text-sm text-emerald-600"
+                                    transition={{ duration: 0.4 }}
+                                    className="mt-3 flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-3"
                                 >
-                                    ✅ تم رفع الصورة بنجاح
-                                </motion.p>
+                                    <motion.img
+                                        src={imageUrl}
+                                        alt="preview"
+                                        whileHover={{ scale: 1.08 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="h-14 w-14 rounded-xl object-cover shadow-sm"
+                                    />
+                                    <p className="text-sm font-semibold text-emerald-700">✅ تم رفع الصورة بنجاح</p>
+                                </motion.div>
                             )}
                         </motion.div>
                         {/* Generate CTA */}
@@ -706,22 +773,55 @@ export default function Home() {
                             transition={{ duration: 0.55, delay: 0.3 }}
                         >
                             <motion.button
-                                whileHover={{ scale: 1.02, boxShadow: "0 12px 40px rgba(15,23,42,0.3)" }}
-                                whileTap={{ scale: 0.97 }}
+                                whileHover={!loading ? { scale: 1.02, boxShadow: "0 16px 48px rgba(15,23,42,0.35)" } : {}}
+                                whileTap={!loading ? { scale: 0.97 } : {}}
                                 onClick={handleGenerate}
                                 disabled={loading}
-                                className="inline-flex w-full items-center justify-center gap-3 rounded-[2rem] bg-slate-900 px-6 py-5 text-base font-bold text-white shadow-xl transition disabled:cursor-not-allowed disabled:opacity-70"
+                                className="relative inline-flex w-full items-center justify-center gap-3 overflow-hidden rounded-[2rem] bg-slate-900 px-6 py-5 text-base font-bold text-white shadow-xl transition disabled:cursor-not-allowed"
                             >
-                                <Wand2 className="h-5 w-5" />
-                                {loading ? "جاري إنشاء الصفحة..." : "أنشئ الصفحة واحصل على اللينك"}
+                                {loading && (
+                                    <motion.div
+                                        className="absolute inset-0 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800"
+                                        animate={{ backgroundPosition: ["0% 0%", "100% 0%", "0% 0%"] }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                        style={{ backgroundSize: "200% 100%" }}
+                                    />
+                                )}
+                                <span className="relative flex items-center gap-3">
+                                    {loading ? (
+                                        <>
+                                            <motion.div
+                                                animate={{ rotate: 360 }}
+                                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                                className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white"
+                                            />
+                                            <AnimatePresence mode="wait">
+                                                <motion.span
+                                                    key={loadingMsg}
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -8 }}
+                                                    transition={{ duration: 0.3 }}
+                                                >
+                                                    {loadingMsg}
+                                                </motion.span>
+                                            </AnimatePresence>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Wand2 className="h-5 w-5" />
+                                            أنشئ الصفحة واحصل على اللينك
+                                        </>
+                                    )}
+                                </span>
                             </motion.button>
                         </motion.div>
 
                     </section>
 
-                    {/* Right column: Preview + link */}
+                    {/* Right column: Phone Preview + Share */}
                     <aside className="space-y-6">
-                        {/* Live preview */}
+                        {/* ── Phone Mockup Preview ── */}
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -729,6 +829,7 @@ export default function Home() {
                             className={`overflow-hidden rounded-[2rem] border shadow-[0_20px_60px_rgba(15,23,42,0.1)] backdrop-blur-xl ${selected.panel}`}
                         >
                             <div className="p-4">
+                                {/* Preview header */}
                                 <div className="mb-3 flex items-center justify-between">
                                     <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-800 shadow-sm">
                                         <Heart className="h-3.5 w-3.5 text-rose-500" />
@@ -737,73 +838,159 @@ export default function Home() {
                                     <div className={`text-xs font-medium ${isDark ? "text-white/60" : "text-slate-500"}`}>{selected.label}</div>
                                 </div>
 
-                                <AnimatePresence mode="wait">
-                                    <motion.div
-                                        key={selected.id}
-                                        initial={{ opacity: 0, scale: 0.96 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.96 }}
-                                        transition={{ duration: 0.4 }}
-                                        className={`rounded-[2rem] p-5 text-center ${selected.previewBg} ${selected.previewText}`}
-                                    >
-                                        <div className="mb-4 flex items-center justify-center">
-                                            <motion.div
-                                                animate={{ scale: [1, 1.12, 1] }}
-                                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                                className={`flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-r ${selected.accent} text-3xl text-white shadow-xl ${selected.glow}`}
-                                            >
-                                                {selected.symbol}
-                                            </motion.div>
-                                        </div>
-
-                                        <div className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">معاينة</div>
-
-                                        {imageUrl ? (
-                                            <motion.div
-                                                initial={{ opacity: 0, scale: 0.95 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                className="mx-auto mb-4 aspect-[4/3] w-full max-w-md overflow-hidden rounded-[1.5rem] shadow-xl"
-                                            >
-                                                <img
-                                                    src={imageUrl}
-                                                    alt="preview"
-                                                    className="w-full h-auto"                                                    onError={(e) => { e.currentTarget.style.display = "none"; }}
-                                                />
-                                            </motion.div>
-                                        ) : (
-                                            <div className={`mx-auto mb-6 w-full max-w-xl overflow-hidden rounded-[1.75rem] shadow-2xl flex items-center justify-center py-8 border border-dashed ${isDark ? "border-white/20 text-white/40" : "border-slate-200 text-slate-400"}`}>
-                                                <span className="text-sm">أضف صورة للمعاينة</span>
-                                            </div>
-                                        )}
-
-                                        <h2 className={`text-2xl font-black tracking-tight md:text-3xl ${isDark ? "text-white" : "text-slate-900"}`}>
-                                            {name || "اكتب الاسم"}
-                                        </h2>
-
-                                        <p className={`mx-auto mt-3 max-w-md text-sm leading-7 ${isDark ? "text-white/70" : "text-slate-600"}`}>
-                                            {message || "اكتب الرسالة هنا وستظهر تلقائيًا في المعاينة."}
-                                        </p>
-
-                                        {/* Theme description */}
-                                        <div className={`mx-auto mt-4 max-w-sm rounded-2xl px-4 py-3 text-xs leading-6 ${isDark ? "bg-white/10 text-white/60" : "bg-slate-50 text-slate-500 border border-slate-100"}`}>
-                                            <span className="font-semibold">{selected.title}</span> — {selected.subtitle}
-                                        </div>
-
-                                        <motion.button
-                                            whileHover={{ scale: 1.04, boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}
-                                            whileTap={{ scale: 0.97 }}
-                                            className={`mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r ${selected.accent} px-6 py-3 text-sm font-bold text-white shadow-lg`}
+                                {/* Preview tabs */}
+                                <div className="mb-4 flex gap-1 rounded-2xl bg-black/10 p-1">
+                                    {["cover", "message"].map((tab) => (
+                                        <button
+                                            key={tab}
+                                            onClick={() => setPreviewTab(tab)}
+                                            className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${
+                                                previewTab === tab
+                                                    ? "bg-white text-slate-900 shadow-sm"
+                                                    : isDark ? "text-white/60 hover:text-white/80" : "text-slate-500 hover:text-slate-700"
+                                            }`}
                                         >
-                                            {displayButtonText}
-                                            <ArrowRight className="h-4 w-4" />
-                                        </motion.button>
-                                    </motion.div>
-                                </AnimatePresence>
+                                            {tab === "cover" ? "🎁 Cover" : "💌 Message"}
+                                        </button>
+                                    ))}
+                                </div>
 
-                                {/* Opening effect badge */}
-                                <div className={`mt-3 flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-medium backdrop-blur-sm ${isDark ? "bg-white/10 text-white/80" : "bg-white/60 text-slate-600"}`}>
-                                    <span>طريقة الفتح:</span>
-                                    <span className="font-bold">{openEffectLabels[selected.openEffect]}</span>
+                                {/* Phone frame */}
+                                <div className="flex justify-center">
+                                    <div className="relative w-[220px]">
+                                        {/* Phone shell */}
+                                        <div className="relative overflow-hidden rounded-[2.5rem] border-[6px] border-slate-800 bg-slate-800 shadow-[0_32px_80px_rgba(0,0,0,0.4)]">
+                                            {/* Notch */}
+                                            <div className="absolute top-0 left-1/2 z-20 h-5 w-20 -translate-x-1/2 rounded-b-2xl bg-slate-800" />
+                                            {/* Screen */}
+                                            <div className={`relative overflow-hidden ${selected.pageBg}`} style={{ height: 420 }}>
+                                                {/* Mini particles */}
+                                                <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                                                    {Array.from({ length: 6 }).map((_, i) => (
+                                                        <motion.div
+                                                            key={i}
+                                                            initial={{ y: 420, opacity: 0 }}
+                                                            animate={{ y: -40, opacity: [0, 0.8, 0] }}
+                                                            transition={{ duration: 4 + i, repeat: Infinity, delay: i * 0.7, ease: "linear" }}
+                                                            className={`absolute select-none text-sm ${selected.particleClass}`}
+                                                            style={{ left: `${10 + i * 15}%` }}
+                                                        >
+                                                            {selected.particle}
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
+
+                                                <AnimatePresence mode="wait">
+                                                    {previewTab === "cover" ? (
+                                                        <motion.div
+                                                            key="cover-preview"
+                                                            initial={{ opacity: 0 }}
+                                                            animate={{ opacity: 1 }}
+                                                            exit={{ opacity: 0 }}
+                                                            transition={{ duration: 0.3 }}
+                                                            className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center"
+                                                        >
+                                                            {/* Symbol pulsing */}
+                                                            <motion.div
+                                                                animate={{ scale: [1, 1.15, 1] }}
+                                                                transition={{ duration: 2, repeat: Infinity }}
+                                                                className={`mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${selected.accent} text-2xl shadow-lg ${selected.glow}`}
+                                                            >
+                                                                {selected.symbol}
+                                                            </motion.div>
+
+                                                            <p className={`text-xs font-black tracking-tight leading-tight ${isDark ? "text-white" : "text-slate-900"}`}>
+                                                                {selected.title}
+                                                            </p>
+                                                            <p className={`mt-1 text-[10px] ${isDark ? "text-white/60" : "text-slate-500"}`}>
+                                                                {selected.subtitle}
+                                                            </p>
+
+                                                            {/* Mini effect preview */}
+                                                            <div className="mt-4">
+                                                                {selected.openEffect === "envelope" && (
+                                                                    <motion.div
+                                                                        animate={{ y: [0, -4, 0] }}
+                                                                        transition={{ duration: 1.5, repeat: Infinity }}
+                                                                        className="text-3xl"
+                                                                    >💌</motion.div>
+                                                                )}
+                                                                {selected.openEffect === "heartUnlock" && (
+                                                                    <motion.div
+                                                                        animate={{ scale: [1, 1.2, 1] }}
+                                                                        transition={{ duration: 1, repeat: Infinity }}
+                                                                        className="text-3xl"
+                                                                    >🤍</motion.div>
+                                                                )}
+                                                                {selected.openEffect === "scratch" && (
+                                                                    <div className={`rounded-xl bg-gradient-to-br ${selected.accent} px-3 py-2 text-[10px] font-bold text-white shadow`}>
+                                                                        ✏️ اكشط هنا
+                                                                    </div>
+                                                                )}
+                                                                {selected.openEffect === "multiStep" && (
+                                                                    <div className="flex gap-1.5 items-center">
+                                                                        {[0,1,2,3,4].map((i) => (
+                                                                            <motion.div
+                                                                                key={i}
+                                                                                animate={{ scale: [1, 1.3, 1] }}
+                                                                                transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.12 }}
+                                                                                className={`h-1.5 w-1.5 rounded-full bg-gradient-to-r ${selected.accent}`}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            <motion.div
+                                                                whileHover={{ scale: 1.05 }}
+                                                                className={`mt-4 rounded-2xl bg-gradient-to-r ${selected.accent} px-4 py-2 text-[10px] font-bold text-white shadow-md`}
+                                                            >
+                                                                {displayButtonText}
+                                                            </motion.div>
+                                                        </motion.div>
+                                                    ) : (
+                                                        <motion.div
+                                                            key="message-preview"
+                                                            initial={{ opacity: 0 }}
+                                                            animate={{ opacity: 1 }}
+                                                            exit={{ opacity: 0 }}
+                                                            transition={{ duration: 0.3 }}
+                                                            className="absolute inset-0 flex flex-col items-center justify-start overflow-y-auto p-4 pt-8"
+                                                        >
+                                                            {imageUrl ? (
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, scale: 0.9 }}
+                                                                    animate={{ opacity: 1, scale: 1 }}
+                                                                    transition={{ duration: 0.6 }}
+                                                                    className="mb-3 w-full overflow-hidden rounded-2xl shadow-lg"
+                                                                >
+                                                                    <img src={imageUrl} alt="preview" className="w-full h-auto object-contain" />
+                                                                </motion.div>
+                                                            ) : (
+                                                                <div className={`mb-3 flex h-20 w-full items-center justify-center rounded-2xl border border-dashed text-[10px] ${isDark ? "border-white/20 text-white/30" : "border-slate-300 text-slate-400"}`}>
+                                                                    صورة
+                                                                </div>
+                                                            )}
+
+                                                            <p className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>
+                                                                {name || "الاسم"}
+                                                            </p>
+
+                                                            <MiniTypewriter
+                                                                text={message || "الرسالة هتظهر هنا..."}
+                                                                isDark={isDark}
+                                                                key={message + previewTab}
+                                                            />
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                            {/* Home bar */}
+                                            <div className="flex justify-center bg-slate-800 py-2">
+                                                <div className="h-1 w-16 rounded-full bg-white/30" />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
@@ -841,52 +1028,57 @@ export default function Home() {
                             <AnimatePresence mode="wait">
                                 {shareTab === "link" ? (
                                     <motion.div key="linktab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium break-all text-slate-700">
-                                            {shareLink}
-                                        </div>
+                                        {link ? (
+                                            <>
+                                                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium break-all text-slate-700">
+                                                    {shareLink}
+                                                </div>
 
-                                        <div className="mt-4 flex gap-3">
-                                            <motion.button
-                                                whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(15,23,42,0.25)" }}
-                                                whileTap={{ scale: 0.97 }}
-                                                onClick={handleGenerate}
-                                                disabled={loading}
-                                                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-70"
-                                            >
-                                                <Sparkles className="h-4 w-4" />
-                                                {loading ? "جاري الإنشاء..." : "أنشئ اللينك"}
-                                            </motion.button>
+                                                <div className="mt-4 flex gap-3">
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.02 }}
+                                                        whileTap={{ scale: 0.97 }}
+                                                        onClick={copyLink}
+                                                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                                                    >
+                                                        {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                                                        {copied ? "تم النسخ ✓" : "نسخ اللينك"}
+                                                    </motion.button>
 
-                                            <motion.button
-                                                whileHover={{ scale: 1.02 }}
-                                                whileTap={{ scale: 0.97 }}
-                                                onClick={copyLink}
-                                                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
-                                            >
-                                                {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-                                                {copied ? "Copied" : "Copy"}
-                                            </motion.button>
-                                        </div>
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.02 }}
+                                                        whileTap={{ scale: 0.97 }}
+                                                        onClick={() => window.open(link, "_blank")}
+                                                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition"
+                                                    >
+                                                        <ArrowRight className="h-4 w-4" />
+                                                        شوف الصفحة
+                                                    </motion.button>
+                                                </div>
 
-                                        {link && (
-                                            <motion.button
-                                                initial={{ opacity: 0, y: 8 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                whileHover={{ scale: 1.02 }}
-                                                whileTap={{ scale: 0.97 }}
-                                                onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, "_blank")}
-                                                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-600"
-                                            >
-                                                <span>📲</span>
-                                                شارك على واتساب
-                                            </motion.button>
+                                                <motion.button
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    whileHover={{ scale: 1.02 }}
+                                                    whileTap={{ scale: 0.97 }}
+                                                    onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, "_blank")}
+                                                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-600"
+                                                >
+                                                    <span>📲</span>
+                                                    شارك على واتساب
+                                                </motion.button>
+                                            </>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-2 py-6 text-center">
+                                                <span className="text-4xl">🔗</span>
+                                                <p className="text-sm text-slate-500">اضغط "أنشئ الصفحة" أسفل الفورم واللينك هيظهر هنا</p>
+                                            </div>
                                         )}
                                     </motion.div>
                                 ) : (
                                     <motion.div key="qrtab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-4">
                                         {link ? (
                                             <>
-                                                {/* Heart-shaped QR using canvas clip */}
                                                 <HeartQR link={link} />
 
                                                 <p className="text-sm font-medium text-slate-600">📸 امسح الكود بالكاميرا لفتح الصفحة</p>
@@ -902,32 +1094,110 @@ export default function Home() {
                                                 </motion.button>
                                             </>
                                         ) : (
-                                            <div className="flex flex-col items-center gap-3 py-6 text-center">
+                                            <div className="flex flex-col items-center gap-2 py-6 text-center">
                                                 <span className="text-4xl">🫀</span>
-                                                <p className="text-sm text-slate-500">أنشئ الصفحة الأول عشان يظهر QR ❤️</p>
-                                                <motion.button
-                                                    whileHover={{ scale: 1.02 }}
-                                                    whileTap={{ scale: 0.97 }}
-                                                    onClick={handleGenerate}
-                                                    disabled={loading}
-                                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition disabled:opacity-70"
-                                                >
-                                                    <Sparkles className="h-4 w-4" />
-                                                    {loading ? "جاري الإنشاء..." : "أنشئ اللينك"}
-                                                </motion.button>
+                                                <p className="text-sm text-slate-500">أنشئ الصفحة الأول من الزر أسفل الفورم وهيظهر QR هنا</p>
                                             </div>
                                         )}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
-                            <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-xs leading-6 text-amber-900">
-                                الصفحات بتتحفظ في Firebase، والصورة بتظهر من رابط Cloudinary.
+                            <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-xs leading-6 text-slate-500 border border-slate-100">
+                                🔒 صفحتك محمية وجاهزة للمشاركة في أي وقت
                             </div>
                         </motion.div>
                     </aside>
                 </div>
             </div>
+
+            {/* ── Success Card Overlay ── */}
+            <AnimatePresence>
+                {showSuccess && link && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+                        onClick={() => setShowSuccess(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            transition={{ duration: 0.35, ease: "easeOut" }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full max-w-sm rounded-[2rem] border border-white/60 bg-white/95 p-6 text-center shadow-[0_30px_80px_rgba(0,0,0,0.3)] backdrop-blur-2xl"
+                        >
+                            <motion.div
+                                animate={{ scale: [1, 1.15, 1], rotate: [0, 8, -8, 0] }}
+                                transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                                className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-500 text-3xl text-white shadow-lg shadow-emerald-300/50"
+                            >
+                                🎉
+                            </motion.div>
+
+                            <h3 className="text-xl font-black text-slate-900">صفحتك جاهزة!</h3>
+                            <p className="mt-1 text-sm text-slate-500">شارك اللينك مع حد تحبه ❤️</p>
+
+                            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs font-medium break-all text-slate-600">
+                                {link}
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-2 gap-3">
+                                <motion.button
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={() => window.open(link, "_blank")}
+                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition"
+                                >
+                                    <ArrowRight className="h-4 w-4" />
+                                    افتح الصفحة
+                                </motion.button>
+
+                                <motion.button
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={copyLink}
+                                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                                >
+                                    {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                                    {copied ? "تم النسخ ✓" : "نسخ اللينك"}
+                                </motion.button>
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-2 gap-3">
+                                <motion.button
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={() => { setShareTab("qr"); setShowSuccess(false); }}
+                                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                                >
+                                    <QrCode className="h-4 w-4" />
+                                    QR كود
+                                </motion.button>
+
+                                <motion.button
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, "_blank")}
+                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-600"
+                                >
+                                    <span>📲</span>
+                                    واتساب
+                                </motion.button>
+                            </div>
+
+                            <button
+                                onClick={() => setShowSuccess(false)}
+                                className="mt-4 text-xs font-medium text-slate-400 transition hover:text-slate-600"
+                            >
+                                إغلاق
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </main>
     );
 }
