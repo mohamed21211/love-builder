@@ -523,7 +523,23 @@ export default function Home() {
                 createdAt: new Date(),
             });
             clearInterval(msgInterval);
-            setLink(`${window.location.origin}/p/${docRef.id}`);
+
+
+            const pageUrl = `${window.location.origin}/p/${docRef.id}`;
+            setLink(pageUrl);
+
+// Telegram Notification
+            try {
+                await fetch(`/api/notify`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url: pageUrl, name: name.trim() }),
+                });
+            } catch (e) {
+                console.error("Telegram error:", e);
+            }
+
+
             setShowSuccess(true);
         } catch (error) {
             clearInterval(msgInterval);
